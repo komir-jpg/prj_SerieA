@@ -3,7 +3,7 @@
 #include<curl/curl.h>
 
 CURL* init_curl_wrapper();
-void set_curl_opt_GET( CURL *handle, char *URL, char *api_key, char *host);
+int set_curl_opt_GET( CURL *handle, const char *URL, const char *api_key, const char *host);
 char *error_buffer_init();
 
 int main(){
@@ -41,11 +41,10 @@ char *error_buffer_init(){
     return error_buffer;
 }
 
-void set_curl_opt_GET( CURL* handler, char *URL, char *api_key, char *host ){
+int set_curl_opt_GET( CURL* handler, const char *URL, const char *api_key, const char *host ){
 
     struct curl_slist *header_slist = NULL;
     struct curl_slist *temp = NULL;
-    char *url = NULL;
 
     char *error_buffer = error_buffer_init();
     curl_easy_setopt( handler, CURLOPT_ERRORBUFFER, error_buffer );
@@ -53,6 +52,16 @@ void set_curl_opt_GET( CURL* handler, char *URL, char *api_key, char *host ){
 
     curl_easy_setopt( handler, CURLOPT_URL, URL );
 
+    header_slist = curl_slist_append( header_slist, api_key );
+    if( !header_slist ){ return -1; }
+    temp = curl_slist_append( header_slist, host );
+    if( !temp ){ 
+	    curl_slist_free_all( header_slist );
+	    return -1; 
+    }
+    header_slist=temp;
+    
+    return 0;
 
 }
 
