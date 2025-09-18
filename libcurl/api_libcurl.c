@@ -1,28 +1,8 @@
-#include<stdio.h>
-#include<stdlib.h>
-#include<curl/curl.h>
-#include<string.h>
+#include "api_libcurl.h"
 
-//TODO easy perform 
 //TODO get url api key host 
-//TODO write the buffer of the perform into file (test solution)
 //TODO get the json
 //TODO parse the json
-
-struct memory{
-    char *response;
-    size_t size;
-};
-
-
-int setup_CURL( CURL *handle, const char *URL, const char *api_key, const char *host, struct memory *chunk, FILE *fd );
-static size_t write_callback( char *data, size_t size, size_t nmemb, void *clientp );
-void print_file( FILE *fd );
-char *error_buffer_init();
-void perform_curl_query( CURL *handle, FILE *fd );
-CURL* init_curl_wrapper();
-short check_perform( CURLcode code );
-
 
 
 CURL* init_curl_wrapper(){
@@ -61,8 +41,6 @@ int setup_CURL( CURL* handle, const char *URL, const char *api_key, const char *
     struct curl_slist *header_slist = NULL;
     struct curl_slist *temp = NULL;
 
-     
-
     char *error_buffer = error_buffer_init();
     curl_easy_setopt( handle, CURLOPT_ERRORBUFFER, error_buffer );
     
@@ -88,7 +66,7 @@ int setup_CURL( CURL* handle, const char *URL, const char *api_key, const char *
     /*
      * all set perform the query 
      * */
-    perform_curl_query( handle, fd );
+    perform_curl_query( handle, fd, chunk, error_buffer );
     
     /* after perform */
     free( chunk->response );
@@ -114,15 +92,41 @@ static size_t write_callback( char *data, size_t size, size_t nmemb, void* clien
     return real_size;
 }
 
-void perform_curl_query( CURL *handle, FILE *fd ){
+void perform_curl_query( CURL *handle, FILE *fd, struct memory *data, char *error_buffer ){
     CURLcode code;
     short result = -1;
     code  = curl_easy_perform( handle );
 
-    result = check_perform( code );
+    result = check_perform( code, error_buffer );
     if( result < 0 ){ return; }
-    else{ print_file( fd ); } /* put result into file */
+    else{ print_file( fd, data ); } /* put result into file */
     
 }
 
+short check_perform( CURLcode code, char *error_buffer ){
+    if ( code != CURLE_OK ){
+        size_t len = strlen( error_buffer );
+        fprintf( stderr, "\nlibcurl: (%d) ", code );
 
+        if( len ){
+            fprintf( stderr, "%s%s", error_buffer, ( error_buffer[ len - 1 ] != '\n' ? "\n" : "" ));
+            return -1;
+        }
+        else{
+            fprintf( stderr, "$%s", curl_easy_strerror( code ));
+            return -1;
+        }
+    }
+    else { return 0; }
+}
+
+void print_file( FILE *fd, struct memory *data ){
+
+    size_t el_wrt;
+
+    fd = fopen( "result.txt", "w" );
+    if ( !fd ){ fprintf( stderr, "unable to open the file\n" ); return; }
+
+    el_wrt = fwrite( data->response, sizeof( char ), data->size, fd );
+    if( el_wrt < data->size ){ fprintf( stderr, "the file was not successfully written\n" ); }
+}
