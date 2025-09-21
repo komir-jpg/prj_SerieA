@@ -1,8 +1,8 @@
 #include "../include/api_libcurl.h"
 
-//TODO get url api key host 
 //TODO get the json
 //TODO parse the json
+
 #define ANSI_COLOR_GREEN   "\x1b[32m"
 #define ANSI_COLOR_RED     "\x1b[31m"
 #define ANSI_COLOR_RESET   "\x1b[0m"
