@@ -1,59 +1,50 @@
 #include "../include/input.h"
+#include <time.h>
 
-void parse_input( char **url, char **api_key, char **host ){
 
-    char API_URL[ 1024 ] = {0};
-    char API_KEY[ 1024 ] = {0};
-    char API_HOST[ 1024 ] = {0};
+//TODO key should not be visible
+//TODO get matches by current date
+//TODO get matches by given date
+//TODO get given match stats lineup ecc..
+//TODO get current standings
+//TODO get player stats
 
-    char *temp_key = "x-rapidapi-key: ";
-    char *temp_host = "x-rapidapi-host: ";
+void get_current_date( char **date ){
 
-    size_t len;
-    size_t len_temp;
+    time_t now = time( NULL );
+    struct tm *tm_info = localtime( &now );
 
-    printf( "insert API query URL: " );
-    fflush( stdout );
-    fgets( API_URL, sizeof( API_URL ), stdin );
-    printf( "insert API key: " );
-    fflush( stdout );
-    fgets( API_KEY, sizeof( API_KEY), stdin );
-    printf( "insert API host: " );
-    fflush( stdout );
-    fgets( API_HOST, sizeof( API_HOST), stdin );
+    //free after the api call
+    *date = malloc( DATE_STR_SIZE*sizeof( char ) );
+    strftime( *date, DATE_STR_SIZE, "%Y-%m-%d", tm_info );
 
-    API_URL[ strcspn( API_URL, "\n" ) ] = '\0';
-    API_KEY[ strcspn( API_KEY, "\n" ) ] = '\0';
-    API_HOST[ strcspn( API_HOST, "\n" ) ] = '\0';
+}
 
-    len = strlen( API_URL );
+char* set_api_key(){
 
-    *url = ( char *)malloc( len + 1 );
-    if( !*url ){ perror( "malloc" ); exit( 1 ); }
-
-    strcpy( *url, API_URL );
-
-    len = strlen( API_KEY );
-    len_temp = strlen( temp_key );
-
-    *api_key = (char *)malloc( len + len_temp + 1 );
-    if( !*api_key ){ perror( "malloc" ); exit( 1 ); }
-
-    strcpy( *api_key, temp_key );
-    strcat( *api_key, API_KEY );
+    const char *env_key = getenv( "API_KEY" );
+    int size = snprintf( NULL, 0, API_KEY, env_key );
     
-    
-    len = strlen( API_HOST );
-    len_temp = strlen( temp_host );
+    //free before program ends
+    char *api_header = malloc( size + 1 );
+    if( !api_header ){ fprintf( stderr, "malloc error\n" ); return NULL;  }
 
-    *host = ( char *)malloc( len + len_temp + 1 );
-    if( !*host ){ perror( "malloc" ); exit( 1 ); }
-
-    strcpy( *host, temp_host );
-    strcat( *host, API_HOST );
+    snprintf( api_header, size + 1, API_KEY, env_key );
+    return api_header;
+}
 
 
-    return;
+void setup_api_headers( char **api_header, char **host_header ){
+
+    size_t str_len = strlen( API_HOST );
+
+    //free before program ends
+    *host_header = malloc( str_len + 1 );
+    if( !*host_header ){ fprintf( stderr, "malloc error\n" ); return; }
+
+    snprintf( *host_header, str_len + 1, API_HOST );
+
+    *api_header = set_api_key();
 
 }
 

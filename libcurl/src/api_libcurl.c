@@ -3,9 +3,6 @@
 //TODO get the json
 //TODO parse the json
 
-#define ANSI_COLOR_GREEN   "\x1b[32m"
-#define ANSI_COLOR_RED     "\x1b[31m"
-#define ANSI_COLOR_RESET   "\x1b[0m"
 
 CURL* init_curl_wrapper(){
     
@@ -67,6 +64,7 @@ int setup_CURL( CURL* handle, const char *URL, const char *api_key, const char *
 
     /*
      * all set perform the query 
+     * needs to be taken out of this function
      * */
     perform_curl_query( handle, fd, chunk, error_buffer );
     
@@ -77,6 +75,7 @@ int setup_CURL( CURL* handle, const char *URL, const char *api_key, const char *
 
     free( error_buffer );
     
+    //don't want to free slist here anymore
     curl_slist_free_all( header_slist ); 
     
     return 0;
