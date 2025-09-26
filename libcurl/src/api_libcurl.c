@@ -35,16 +35,14 @@ char *error_buffer_init(){
     return error_buffer;
 }
 
-int setup_CURL( CURL* handle, const char *URL, const char *api_key, const char *host, struct memory *chunk, FILE **fd ){
+int setup_CURL( CURL* handle, const char *api_key, const char *host, struct curl_slist *header_slist, struct memory *chunk, char **error_buffer ){
 
-    struct curl_slist *header_slist = NULL;
     struct curl_slist *temp = NULL;
 
-    char *error_buffer = error_buffer_init();
+    *error_buffer = error_buffer_init();
     curl_easy_setopt( handle, CURLOPT_ERRORBUFFER, error_buffer );
-    
+
     curl_easy_setopt( handle, CURLOPT_HTTPGET, 1L );
-    curl_easy_setopt( handle, CURLOPT_URL, URL );
 
     header_slist = curl_slist_append( header_slist, api_key );
     if( !header_slist ){ return -1; }
@@ -58,25 +56,12 @@ int setup_CURL( CURL* handle, const char *URL, const char *api_key, const char *
     header_slist=temp;
 
     curl_easy_setopt( handle, CURLOPT_HTTPHEADER, header_slist );
+    free( ( void* )api_key );
+    free( ( void* )host );
     
     curl_easy_setopt( handle, CURLOPT_WRITEFUNCTION, write_callback );
-    curl_easy_setopt( handle, CURLOPT_WRITEDATA, ( void * )chunk ); 
+    curl_easy_setopt( handle, CURLOPT_WRITEDATA, ( void* )chunk ); 
 
-    /*
-     * all set perform the query 
-     * needs to be taken out of this function
-     * */
-    perform_curl_query( handle, fd, chunk, error_buffer );
-    
-    /* after perform */
-    free( chunk->response );
-    chunk->response = NULL;
-    chunk->size = 0;
-
-    free( error_buffer );
-    
-    //don't want to free slist here anymore
-    curl_slist_free_all( header_slist ); 
     
     return 0;
 
@@ -84,7 +69,7 @@ int setup_CURL( CURL* handle, const char *URL, const char *api_key, const char *
 
 static size_t write_callback( char *data, size_t size, size_t nmemb, void* clientp ){
     size_t real_size = size * nmemb;
-    struct memory *mem = ( struct memory * )clientp;
+    struct memory *mem = ( struct memory* )clientp;
 
     char *ptr = realloc( mem->response, mem->size + real_size + 1 );
     if( !ptr ){ return 0; } /* realloc error out of memory */
@@ -97,23 +82,36 @@ static size_t write_callback( char *data, size_t size, size_t nmemb, void* clien
     return real_size;
 }
 
-void perform_curl_query( CURL *handle, FILE **fd, struct memory *data, char *error_buffer ){
+void perform_curl_query( CURL *handle, FILE **fd, struct memory *data, char *error_buffer, const char *url ){
     CURLcode code;
     short result = -1;
 
+    curl_easy_setopt( handle, CURLOPT_URL, url);
+    free( ( void* )url );
+    
     printf( ANSI_COLOR_GREEN "performing the query...\n" ANSI_COLOR_RESET );
     code  = curl_easy_perform( handle );
 
     result = check_perform( code, error_buffer );
-    if( result < 0 ){ return; }
+    if( result < 0 ){ 
+        
+        free( data->response );
+        data->response = NULL;
+        data->size = 0;
+        return;
+    }
     else{ print_file( fd, data ); } /* put result into file */
+    
+    free( data->response );
+    data->response = NULL;
+    data->size = 0;
     
 }
 
 short check_perform( CURLcode code, char *error_buffer ){
     if ( code != CURLE_OK ){
         size_t len = strlen( error_buffer );
-        fprintf( stderr, "\nlibcurl: (%d) ", code );
+        fprintf( stderr, ANSI_COLOR_RED "\nlibcurl: (%d) " ANSI_COLOR_RESET, code );
 
         if( len ){
             fprintf( stderr, ANSI_COLOR_RED "%s%s" ANSI_COLOR_RESET, error_buffer, ( error_buffer[ len - 1 ] != '\n' ? "\n" : "" ));
