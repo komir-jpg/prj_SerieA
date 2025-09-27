@@ -16,7 +16,7 @@ char *get_current_date(){
 
     //free after the api call
     char *date = malloc( DATE_STR_SIZE*sizeof( char ) );
-    strftime( date, DATE_STR_SIZE, "%Y-%m-%d", tm_info );
+    strftime( date, DATE_STR_SIZE, "%Y%m%d", tm_info );
 
     return date;
 

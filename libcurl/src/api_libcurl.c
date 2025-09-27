@@ -100,7 +100,7 @@ void perform_curl_query( CURL *handle, FILE **fd, struct memory *data, char *err
         data->size = 0;
         return;
     }
-    else{ print_file( fd, data ); } /* put result into file */
+    else{ print_file( data ); } /* put result into file */
     
     free( data->response );
     data->response = NULL;
@@ -125,16 +125,3 @@ short check_perform( CURLcode code, char *error_buffer ){
     else { return 0; }
 }
 
-void print_file( FILE **fd, struct memory *data ){
-
-    size_t el_wrt;
-
-    *fd = fopen( "result.txt", "w" );
-    if ( !*fd ){ fprintf( stderr, ANSI_COLOR_RED "unable to open the file\n" ANSI_COLOR_RESET ); return; }
-
-    el_wrt = fwrite( data->response, sizeof( char ), data->size, *fd );
-    if( el_wrt < data->size ){ fprintf( stderr, "the file was not successfully written\n" ); }
-    else { fprintf( stdout, ANSI_COLOR_GREEN "the file was successfully written\n" ANSI_COLOR_RESET ); }
-
-    fclose( *fd );
-}
