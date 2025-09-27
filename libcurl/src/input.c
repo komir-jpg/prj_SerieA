@@ -31,7 +31,7 @@ char* set_api_key(){
     if( !api_header ){ fprintf( stderr, "malloc error\n" ); return NULL;  }
 
     snprintf( api_header, size + 1, API_KEY, env_key );
-
+    printf("\n%s\n", api_header);
     return api_header;
 }
 
@@ -59,4 +59,5 @@ void get_match_current_date_url( char **api_call_url ){
     if( !*api_call_url ){ fprintf( stderr, "malloc error\n" ); return; }
 
     snprintf( *api_call_url, size + 1,  CALL_FIX_CURR_DATE, date );
+    printf("\n%s\n", *api_call_url );
 }
