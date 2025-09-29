@@ -29,7 +29,7 @@ char *error_buffer_init(){
     
     /* remember to free the buffer when calling curl_easy_cleanup */
 
-    char *error_buffer = NULL;
+    char *error_buffer;
     error_buffer = ( char* )calloc( CURL_ERROR_SIZE, sizeof( char ) );
     
     return error_buffer;
@@ -82,7 +82,7 @@ static size_t write_callback( char *data, size_t size, size_t nmemb, void* clien
     return real_size;
 }
 
-void perform_curl_query( CURL *handle, FILE **fd, struct memory *data, char *error_buffer, const char *url ){
+void perform_curl_query( CURL *handle, struct memory *data, char *error_buffer, const char *url ){
     CURLcode code;
     short result = -1;
 
@@ -100,11 +100,6 @@ void perform_curl_query( CURL *handle, FILE **fd, struct memory *data, char *err
         data->size = 0;
         return;
     }
-    else{ print_file( data ); } /* put result into file */
-    
-    free( data->response );
-    data->response = NULL;
-    data->size = 0;
     
 }
 
@@ -122,6 +117,6 @@ short check_perform( CURLcode code, char *error_buffer ){
             return -1;
         }
     }
-    else { return 0; }
+    return 0; 
 }
 
