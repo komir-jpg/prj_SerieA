@@ -32,15 +32,16 @@ struct league_matches{
     unsigned int league_ID;
     char *league_name; //allocate when parsing
     struct match *td_matches;
+    unsigned int num_matches;
 };
 
 
-cJSON* create_json_obj( struct memory *data, cJSON **root );
-cJSON* get_response( cJSON *obj, cJSON **response );
-struct league_matches *parse_lm( cJSON *obj, const char *key, struct league_matches **lm ); 
-void parse_matches( cJSON *obj, struct league_matches *lm );
+void create_json_obj( struct memory *data, cJSON **root );
+void get_response( cJSON *obj, cJSON **response );
+bool parse_lm( cJSON *obj, const char *key, struct league_matches **lm ); 
+static void parse_matches( cJSON *obj, struct league_matches *lm );
 
-void parse_status( cJSON *obj, struct match *match );
-void parse_team( cJSON *obj, struct match *match, const char *team );
+static void parse_status( cJSON *obj, struct match *match );
+static void parse_team( cJSON *obj, struct match *match, const char *team );
 
 #endif

@@ -1,23 +1,23 @@
 #include "../include/get_matchday.h"
 
-cJSON* create_json_obj( struct memory *data, cJSON **root ){
+void create_json_obj( struct memory *data, cJSON **root ){
 
     *root = cJSON_Parse( data->response );
-    if( !*root ){ fprintf( stderr, ANSI_COLOR_RED "can't parse the json file\n" ANSI_COLOR_RESET ); }
+    cJSON_Print( *root );
+    if( !*root ){ fprintf( stderr, ANSI_COLOR_RED "can't parse the json file\n" ANSI_COLOR_RESET ); return; }
     
-    return NULL;
 }
 
-cJSON* get_response( cJSON *obj, cJSON **response ){
+void get_response( cJSON *obj, cJSON **response ){
     *response = cJSON_GetObjectItem( obj, "response" );
-    if( !*response ){ fprintf( stderr, ANSI_COLOR_RED "can't get response item form json\n" ANSI_COLOR_RESET ); }
+    if( !*response ){ fprintf( stderr, ANSI_COLOR_RED "can't get response item form json\n" ANSI_COLOR_RESET ); return; }
 
-    return NULL;
     
 }
 
-struct league_matches *parse_lm( cJSON *obj, const char *value, struct league_matches **lm ){
+bool parse_lm( cJSON *obj, const char *value, struct league_matches **lm ){
 
+    if( !obj ){ return false; }
     cJSON *league;
     //TODO free after usage
     *lm = calloc( 1, sizeof( struct league_matches ) );
@@ -38,8 +38,8 @@ struct league_matches *parse_lm( cJSON *obj, const char *value, struct league_ma
            break;
         }
     }
+    return true;
 
-    return NULL;
 }
 
 void parse_matches( cJSON *obj, struct league_matches *lm ){
@@ -48,6 +48,7 @@ void parse_matches( cJSON *obj, struct league_matches *lm ){
     cJSON *matches = cJSON_GetObjectItem( obj, "matches" );
     //get the number of matches
     unsigned int num_m = cJSON_GetArraySize( matches );
+    lm->num_matches = num_m;
 
     //TODO free after usage
     struct match *m_list = calloc( num_m, sizeof( struct match ));
