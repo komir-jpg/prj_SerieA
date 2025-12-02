@@ -1,0 +1,12 @@
+services:
+  cpp-dev:
+    build: .
+    container_name: cpp-dev
+    tty: true
+    stdin_open: true
+    working_dir: /project
+    volumes:
+      - ./project:/project                # monta la cartella del progetto
+      - ${HOME}/.config/nvim/:/root/.config/nvim # monta la tua config Neovim
+      - ${HOME}/.zshrc:/root/.zshrc             # monta il tuo zshrc
+      - ${HOME}/.oh-my-zsh/:/root/.oh-my-zsh     # monta Oh My Zsh
