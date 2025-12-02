@@ -1,9 +1,0 @@
-league->teams->standings->match
-
-league
-    league ID
-    league name
-    teams IDs
-    teams Names
-
-    

@@ -1,0 +1,5 @@
+project/objects/*
+project/.clang-format
+project/compile_commands.json
+project/main
+notes
