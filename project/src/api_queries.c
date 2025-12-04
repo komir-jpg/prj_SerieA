@@ -1,5 +1,4 @@
 #include "api_queries.h"
-#include <time.h>
 
 // TODO key should not be visible
 // TODO get matches by current date
@@ -43,51 +42,34 @@ static char *set_api_key() {
 }
 static char *set_host_url() { return strdup(API_HOST); }
 
-static void setup_headers(query_url *query) {
+void setup_headers(query_url *query) {
     query->api_key = set_api_key();
     query->host_url = set_host_url();
 }
 
-static void matchday_query_url(query_url *query) {
-    // here the user gets no prompt the program figures itself current date
-    char *date = get_current_date();
-    // first we get the size of the string concatenation
-    if (date) {
-        unsigned int size = snprintf(NULL, 0, CALL_FIX_CURR_DATE, date);
+static void matchday_query_url(query_url *query) {}
 
-        query->url = malloc(size + 1);
-        if (!query->url) {
-            fprintf(stderr, "malloc error\n");
-            free(date);
-            return;
-        }
-
-        snprintf(query->url, size + 1, CALL_FIX_CURR_DATE, date);
-        free(date);
-    }
+static void standings_query_url(query_url *query, const int league_id) {
+    int year = get_current_year();
+    size_t size = snprintf(NULL, 0, GET_LEAGUE_STANDINGS, league_id, year);
+    query->url = realloc(query->url, size + 1);
+    snprintf(query->url, size + 1, GET_LEAGUE_STANDINGS, league_id, year);
 }
-
-static void standings_query_url(query_url *query, const int league_id) {}
 
 static void league_query_url(query_url *query, int *curr_year) {
     int year = get_current_year();
     *curr_year = year;
     size_t size = snprintf(NULL, 0, GET_LEAGUE, year);
-    query->url = malloc(size + 1);
+    query->url = realloc(query->url, size + 1);
     snprintf(query->url, size + 1, GET_LEAGUE, year);
 }
 
 void standings_query(query_url *query, const int league_id) {
-    setup_headers(query);
     standings_query_url(query, league_id);
 }
 
-void matchday_query(query_url *query) {
-    setup_headers(query);
-    matchday_query_url(query);
-}
+void matchday_query(query_url *query) { matchday_query_url(query); }
 
 void league_query(query_url *query, int *curr_year) {
-    setup_headers(query);
     league_query_url(query, curr_year);
 }

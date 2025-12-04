@@ -6,10 +6,3 @@ cJSON *json_root(char *response) {
     }
     return cJSON_Parse(response);
 }
-
-cJSON *json_response(cJSON *root) {
-    if (!root) {
-        return NULL;
-    }
-    return cJSON_GetObjectItem(root, "data");
-}

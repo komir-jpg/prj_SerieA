@@ -4,7 +4,7 @@ League *parse_league(buffer *buff, const int curr_year) {
         return NULL;
     }
     cJSON *root = json_root(buff->response);
-    cJSON *response = json_response(root);
+    cJSON *data = cJSON_GetObjectItem(root, "data");
     cJSON *current_obj;
 
     League *l = malloc(sizeof(League));
@@ -12,7 +12,7 @@ League *parse_league(buffer *buff, const int curr_year) {
     l->league_ID = 0;
     l->year = 0;
 
-    cJSON_ArrayForEach(current_obj, response) {
+    cJSON_ArrayForEach(current_obj, data) {
         // check if league exists
         cJSON *id = cJSON_GetObjectItem(current_obj, "id");
         if (cJSON_IsNumber(id))

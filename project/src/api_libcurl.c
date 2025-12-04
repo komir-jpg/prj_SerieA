@@ -1,4 +1,21 @@
 #include "api_libcurl.h"
+static size_t write_callback(char *data, size_t size, size_t nmemb,
+                             void *clientp) {
+    size_t real_size = size * nmemb;
+    buffer *mem = (buffer *)clientp;
+
+    char *ptr = realloc(mem->response, mem->size + real_size + 1);
+    if (!ptr) {
+        return 0;
+    } /* realloc error out of memory */
+
+    mem->response = ptr;
+    memcpy(&(mem->response[mem->size]), data, real_size);
+    mem->size += real_size;
+    mem->response[mem->size] = 0;
+
+    return real_size;
+}
 
 CURL *init_curl_wrapper() {
 
@@ -33,9 +50,9 @@ void error_buffer_init(char **error_buffer) {
     *error_buffer = calloc(CURL_ERROR_SIZE, sizeof(char));
 }
 
-int setup_CURL(CURL *handle, const query_url *q,
-               struct curl_slist *header_slist, buffer *buff,
-               char **error_buffer) {
+bool setup_CURL(CURL *handle, const query_url *q,
+                struct curl_slist **header_slist, buffer *buff,
+                char **error_buffer) {
 
     struct curl_slist *temp = NULL;
 
@@ -44,43 +61,25 @@ int setup_CURL(CURL *handle, const query_url *q,
 
     curl_easy_setopt(handle, CURLOPT_HTTPGET, 1L);
 
-    header_slist = curl_slist_append(header_slist, q->api_key);
+    *header_slist = curl_slist_append(*header_slist, q->api_key);
     if (!header_slist) {
-        return -1;
+        return false;
     }
-    temp = curl_slist_append(header_slist, q->host_url);
+    temp = curl_slist_append(*header_slist, q->host_url);
     if (!temp) {
-        curl_slist_free_all(header_slist);
-        return -1;
+        curl_slist_free_all(*header_slist);
+        return false;
     }
-    header_slist = temp;
+    *header_slist = temp;
 
-    curl_easy_setopt(handle, CURLOPT_HTTPHEADER, header_slist);
+    curl_easy_setopt(handle, CURLOPT_HTTPHEADER, *header_slist);
     free((void *)q->api_key);
     free((void *)q->host_url);
 
     curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, write_callback);
     curl_easy_setopt(handle, CURLOPT_WRITEDATA, (void *)buff);
 
-    return 0;
-}
-
-static size_t write_callback(char *data, size_t size, size_t nmemb,
-                             void *clientp) {
-    size_t real_size = size * nmemb;
-    buffer *mem = (buffer *)clientp;
-
-    char *ptr = realloc(mem->response, mem->size + real_size + 1);
-    if (!ptr) {
-        return 0;
-    } /* realloc error out of memory */
-
-    mem->response = ptr;
-    memcpy(&(mem->response[mem->size]), data, real_size);
-    mem->size += real_size;
-    mem->response[mem->size] = 0;
-
-    return real_size;
+    return true;
 }
 
 void perform_curl_query(CURL *handle, buffer *data, char *error_buffer,
@@ -89,7 +88,6 @@ void perform_curl_query(CURL *handle, buffer *data, char *error_buffer,
     short result = -1;
 
     curl_easy_setopt(handle, CURLOPT_URL, url);
-    free((void *)url);
 
     printf(ANSI_COLOR_GREEN "performing the query...\n" ANSI_COLOR_RESET);
     code = curl_easy_perform(handle);

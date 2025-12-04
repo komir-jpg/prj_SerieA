@@ -48,7 +48,7 @@ void free_team_standing(Team_standing *ts) {
         return;
     }
     if (ts->form) {
-        free(ts->form);
+        // free(ts->form);
         ts->form = NULL;
     }
     if (ts->t) {
