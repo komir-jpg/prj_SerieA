@@ -1,6 +1,6 @@
 CC := cc
 CFLAGS := -Iinclude -Wall -Wextra -g -fsanitize=address
-LDFLAGS := -lcurl -lcjson -fsanitize=address
+LDFLAGS := -lncurses -lcurl -lcjson -lncurses -lpanel -lmenu -fsanitize=address
 OBJDIR := objects
 LSAN_SUPP := lsan.supp
 $(shell mkdir -p $(OBJDIR))

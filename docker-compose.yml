@@ -1,12 +1,50 @@
 services:
-  cpp-dev:
-    build: .
-    container_name: cpp-dev
+  c-dev:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: c-dev
     tty: true
     stdin_open: true
-    working_dir: /project
+    working_dir: /home/devuser/project
     volumes:
-      - ./project:/project                # monta la cartella del progetto
-      - ${HOME}/.config/nvim/:/root/.config/nvim # monta la tua config Neovim
-      - ${HOME}/.zshrc:/root/.zshrc             # monta il tuo zshrc
-      - ${HOME}/.oh-my-zsh/:/root/.oh-my-zsh     # monta Oh My Zsh
+      # Codice sorgente
+      - ./project:/home/devuser/project
+      
+      # Persistenza dati
+      - nvim-data:/home/devuser/.local/share/nvim
+      - nvim-state:/home/devuser/.local/state/nvim
+      - zsh-history:/home/devuser/.zsh_history_data
+      
+      # Wayland socket
+      - /run/user/${UID:-1000}:/run/user/1000
+      - ${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY:-wayland-0}:/tmp/${WAYLAND_DISPLAY:-wayland-0}
+      
+      # X11 fallback (alcune app potrebbero usarlo via XWayland)
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    
+    environment:
+      - TERM=xterm-256color
+      - WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-wayland-0}
+      - XDG_RUNTIME_DIR=/run/user/1000
+      - DISPLAY=${DISPLAY:-:0}
+      - QT_QPA_PLATFORM=wayland
+      - GDK_BACKEND=wayland,x11
+      - MOZ_ENABLE_WAYLAND=1
+    
+    user: "1000:1000"
+    
+    # Opzionale: limiti risorse
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '2'
+    #       memory: 2G
+
+volumes:
+  nvim-data:
+    driver: local
+  nvim-state:
+    driver: local
+  zsh-history:
+    driver: local
