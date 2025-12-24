@@ -1,121 +1,119 @@
 #include "api_libcurl.h"
 static size_t write_callback(char *data, size_t size, size_t nmemb,
                              void *clientp) {
-    size_t real_size = size * nmemb;
-    buffer *mem = (buffer *)clientp;
+  size_t real_size = size * nmemb;
+  buffer *mem = (buffer *)clientp;
 
-    char *ptr = realloc(mem->response, mem->size + real_size + 1);
-    if (!ptr) {
-        return 0;
-    } /* realloc error out of memory */
+  char *ptr = realloc(mem->response, mem->size + real_size + 1);
+  if (!ptr) {
+    return 0;
+  } /* realloc error out of memory */
 
-    mem->response = ptr;
-    memcpy(&(mem->response[mem->size]), data, real_size);
-    mem->size += real_size;
-    mem->response[mem->size] = 0;
+  mem->response = ptr;
+  memcpy(&(mem->response[mem->size]), data, real_size);
+  mem->size += real_size;
+  mem->response[mem->size] = 0;
 
-    return real_size;
+  return real_size;
 }
 
 CURL *init_curl_wrapper() {
 
-    CURL *handle = NULL;
-    CURLcode global_result = curl_global_init(CURL_GLOBAL_ALL);
+  CURL *handle = NULL;
+  CURLcode global_result = curl_global_init(CURL_GLOBAL_ALL);
 
-    if (global_result != CURLE_OK) {
-        fprintf(
-            stderr,
+  if (global_result != CURLE_OK) {
+    fprintf(stderr,
             ANSI_COLOR_RED
             "Critical error curl_global_init() failed: %s\n" ANSI_COLOR_RESET,
             curl_easy_strerror(global_result));
-        exit(EXIT_FAILURE);
-    }
+    exit(EXIT_FAILURE);
+  }
 
-    handle = curl_easy_init();
+  handle = curl_easy_init();
 
-    if (!handle) {
-        fprintf(stderr, ANSI_COLOR_RED
-                "Critical error curl_easy_init failed\n" ANSI_COLOR_RESET);
-        curl_global_cleanup();
-        exit(EXIT_FAILURE);
-    }
+  if (!handle) {
+    fprintf(stderr, ANSI_COLOR_RED
+            "Critical error curl_easy_init failed\n" ANSI_COLOR_RESET);
+    curl_global_cleanup();
+    exit(EXIT_FAILURE);
+  }
 
-    return handle;
+  return handle;
 }
 
 void error_buffer_init(char **error_buffer) {
 
-    /* remember to free the buffer when calling curl_easy_cleanup */
+  /* remember to free the buffer when calling curl_easy_cleanup */
 
-    *error_buffer = calloc(CURL_ERROR_SIZE, sizeof(char));
+  *error_buffer = calloc(CURL_ERROR_SIZE, sizeof(char));
 }
 
 bool setup_CURL(CURL *handle, const query_url *q,
                 struct curl_slist **header_slist, buffer *buff,
                 char **error_buffer) {
 
-    struct curl_slist *temp = NULL;
+  struct curl_slist *temp = NULL;
 
-    error_buffer_init(error_buffer);
-    curl_easy_setopt(handle, CURLOPT_ERRORBUFFER, *error_buffer);
+  error_buffer_init(error_buffer);
+  curl_easy_setopt(handle, CURLOPT_ERRORBUFFER, *error_buffer);
 
-    curl_easy_setopt(handle, CURLOPT_HTTPGET, 1L);
+  curl_easy_setopt(handle, CURLOPT_HTTPGET, 1L);
 
-    *header_slist = curl_slist_append(*header_slist, q->api_key);
-    if (!header_slist) {
-        return false;
-    }
-    temp = curl_slist_append(*header_slist, q->host_url);
-    if (!temp) {
-        curl_slist_free_all(*header_slist);
-        return false;
-    }
-    *header_slist = temp;
+  *header_slist = curl_slist_append(*header_slist, q->api_key);
+  if (!header_slist) {
+    return false;
+  }
+  temp = curl_slist_append(*header_slist, q->host_url);
+  if (!temp) {
+    curl_slist_free_all(*header_slist);
+    return false;
+  }
+  *header_slist = temp;
 
-    curl_easy_setopt(handle, CURLOPT_HTTPHEADER, *header_slist);
-    free((void *)q->api_key);
-    free((void *)q->host_url);
+  curl_easy_setopt(handle, CURLOPT_HTTPHEADER, *header_slist);
+  free((void *)q->api_key);
+  free((void *)q->host_url);
 
-    curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, write_callback);
-    curl_easy_setopt(handle, CURLOPT_WRITEDATA, (void *)buff);
+  curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, write_callback);
+  curl_easy_setopt(handle, CURLOPT_WRITEDATA, (void *)buff);
 
-    return true;
+  return true;
 }
 
 void perform_curl_query(CURL *handle, buffer *data, char *error_buffer,
                         const char *url) {
-    CURLcode code;
-    short result = -1;
+  CURLcode code;
+  short result = -1;
 
-    curl_easy_setopt(handle, CURLOPT_URL, url);
+  curl_easy_setopt(handle, CURLOPT_URL, url);
 
-    printf(ANSI_COLOR_GREEN "performing the query...\n" ANSI_COLOR_RESET);
-    code = curl_easy_perform(handle);
+  printf(ANSI_COLOR_GREEN "performing the query...\n" ANSI_COLOR_RESET);
+  code = curl_easy_perform(handle);
 
-    result = check_perform(code, error_buffer);
-    if (result < 0) {
-        free(data->response);
-        data->response = NULL;
-        data->size = 0;
-        return;
-    }
+  result = check_perform(code, error_buffer);
+  if (result < 0) {
+    free(data->response);
+    data->response = NULL;
+    data->size = 0;
+    return;
+  }
 }
 
 short check_perform(CURLcode code, char *error_buffer) {
-    if (code != CURLE_OK) {
-        size_t len = strlen(error_buffer);
-        fprintf(stderr, ANSI_COLOR_RED "\nlibcurl: (%d) " ANSI_COLOR_RESET,
-                code);
+  if (code != CURLE_OK) {
+    size_t len = strlen(error_buffer);
+    fprintf(stderr, ANSI_COLOR_RED "\nlibcurl: (%d) " ANSI_COLOR_RESET, code);
 
-        if (len) {
-            fprintf(stderr, ANSI_COLOR_RED "%s%s" ANSI_COLOR_RESET,
-                    error_buffer, (error_buffer[len - 1] != '\n' ? "\n" : ""));
-            return -1;
-        } else {
-            fprintf(stderr, ANSI_COLOR_RED "%s" ANSI_COLOR_RESET,
-                    curl_easy_strerror(code));
-            return -1;
-        }
+    if (len) {
+      fprintf(stderr, ANSI_COLOR_RED "%s%s" ANSI_COLOR_RESET, error_buffer,
+              (error_buffer[len - 1] != '\n' ? "\n" : ""));
+      return -1;
+    } else {
+      fprintf(stderr, ANSI_COLOR_RED "%s" ANSI_COLOR_RESET,
+              curl_easy_strerror(code));
+      return -1;
     }
-    return 0;
+  }
+  return 0;
 }
